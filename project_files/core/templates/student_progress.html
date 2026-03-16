@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Student Progress Report | Smart Study Guard</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body class="bg-light">
+
+<!-- ===== HEADER ===== -->
+<nav class="navbar navbar-expand-lg navbar-dark" style="background-color:#0d6efd;">
+  <div class="container-fluid">
+
+    <span class="navbar-brand mb-0 h1">
+      Smart Study Guard
+    </span>
+
+    <div class="d-flex gap-2">
+      <a href="{% url 'student_dashboard' %}" class="btn btn-outline-light btn-sm">
+        Dashboard
+      </a>
+    </div>
+
+  </div>
+</nav>
+<!-- ===== HEADER END ===== -->
+
+
+<div class="container mt-5">
+
+  <h2 class="text-center mb-4">Student Progress Report</h2>
+
+  <!-- SUMMARY -->
+  <div class="row text-center mb-4">
+
+    <div class="col-md-3 mb-3">
+      <div class="card p-3 shadow-sm">
+        <h6>Total Quizzes</h6>
+        <h3>{{ total_quizzes }}</h3>
+      </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+      <div class="card p-3 shadow-sm">
+        <h6>Average Score</h6>
+        <h3>{{ average_score }}%</h3>
+      </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+      <div class="card p-3 shadow-sm">
+        <h6>Best Score</h6>
+        <h3>{{ best_score }}%</h3>
+      </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+      <div class="card p-3 shadow-sm">
+        <h6>Lowest Score</h6>
+        <h3>{{ worst_score }}%</h3>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- CHART -->
+  <div class="card p-4 shadow-sm">
+    <h5 class="text-center mb-3">Quiz Performance Over Time</h5>
+    <canvas id="progressChart" height="120"></canvas>
+  </div>
+
+</div>
+
+<!-- ✅ REQUIRED: Hidden JSON data -->
+<script id="student-scores" type="application/json">
+  {{ scores|safe }}
+</script>
+
+<!-- ===== SCRIPT ===== -->
+<script>
+  const scores = JSON.parse(
+    document.getElementById("student-scores").textContent
+  );
+
+  if (scores.length > 0) {
+    new Chart(document.getElementById("progressChart"), {
+      type: "line",
+      data: {
+        labels: scores.map((_, i) => "Quiz " + (i + 1)),
+        datasets: [{
+          label: "Score (%)",
+          data: scores,
+          borderColor: "#0d6efd",
+          backgroundColor: "rgba(13,110,253,0.2)",
+          tension: 0.3,
+          borderWidth: 3,
+          fill: true
+        }]
+      },
+      options: {
+        scales: {
+          y: {
+            beginAtZero: true,
+            max: 100
+          }
+        }
+      }
+    });
+  }
+</script>
+
+</body>
+</html>
