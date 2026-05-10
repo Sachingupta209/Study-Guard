@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ quiz.subject }} Quiz Result</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body { background: #f4f6fa; }
+    .card-box {
+      background: #fff;
+      border-radius: 10px;
+      padding: 30px;
+      margin-top: 30px;
+      box-shadow: 0 5px 10px rgba(0,0,0,0.1);
+    }
+    .score {
+      font-size: 40px;
+      font-weight: bold;
+      color: #198754;
+    }
+    .correct { color: green; }
+    .wrong { color: red; }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <div class="card-box text-center">
+    <h2>{{ quiz.subject }} – Quiz Result</h2>
+    <p class="text-muted">Quiz submitted successfully</p>
+
+    <h1 class="score">{{ quiz.score }}%</h1>
+    <p>
+      <strong>{{ correct_count }}</strong> Correct |
+      <strong>{{ wrong_count }}</strong> Wrong
+    </p>
+    <p>Total Questions: {{ total }}</p>
+
+    <hr>
+
+    <h4>Score Breakdown</h4>
+    <canvas id="scoreChart" height="200"></canvas>
+
+    <hr>
+
+    <h4>Answer Review</h4>
+
+    {% for q in questions %}
+      <div class="border rounded p-3 mb-3 text-start">
+        <p><strong>Q{{ forloop.counter }}.</strong> {{ q.question_text }}</p>
+        <p>
+          Your Answer:
+          {% if q.user_answer == q.correct_answer %}
+            <span class="correct">{{ q.user_answer }}</span>
+          {% else %}
+            <span class="wrong">{{ q.user_answer|default:"Not Answered" }}</span>
+          {% endif %}
+        </p>
+        <p>Correct Answer: <strong>{{ q.correct_answer }}</strong></p>
+      </div>
+    {% endfor %}
+
+    <a href="{% url 'quiz_home' %}" class="btn btn-primary mt-3">Back to Quizzes</a>
+  </div>
+
+</div>
+
+<script>
+/* SAFE JAVASCRIPT – WILL NEVER CRASH */
+
+(function () {
+
+  const correct = Number("{{ correct_count|default:0 }}");
+  const wrong = Number("{{ wrong_count|default:0 }}");
+
+  const ctx = document.getElementById("scoreChart");
+
+  if (ctx) {
+    new Chart(ctx, {
+      type: "doughnut",
+      data: {
+        labels: ["Correct", "Wrong"],
+        datasets: [{
+          data: [correct, wrong],
+          backgroundColor: ["#198754", "#dc3545"]
+        }]
+      },
+      options: {
+        responsive: true,
+        cutout: "70%"
+      }
+    });
+  }
+
+})();
+</script>
+
+</body>
+</html>

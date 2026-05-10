@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="#">Smart Study Guard</a>
+        <div class="d-flex">
+            <a href="{% url 'logout' %}" class="btn btn-outline-light btn-sm">Logout</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-5">
+    <h2 class="text-center mb-4">Welcome, {{ student.user.first_name }} </h2>
+
+    <div class="row">
+        <div class="col-md-4 mb-3">
+            <div class="card shadow-sm">
+                <div class="card-body text-center">
+                    <h5 class="card-title"> My Notes</h5>
+                    <p>Upload and manage your study notes.</p>
+                    <a href="{% url 'student_notes' %}" class="btn btn-primary w-100">Go to Notes</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card shadow-sm">
+                <div class="card-body text-center">
+                    <h5 class="card-title"> Quiz Generator</h5>
+                    <p>Test yourself using quizzes from your notes.</p>
+                    <a href="{% url 'quiz_home' %}" class="btn btn-primary w-100">Go to Quiz</a>
+
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card shadow-sm">
+                <div class="card-body text-center">
+                    <h5 class="card-title"> Progress Report</h5>
+                    <p>View your learning progress and performance.</p>
+                    <a href="{% url 'student_progress' %}" class="btn btn-primary w-100">View Progress Report</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
