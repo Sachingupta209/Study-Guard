@@ -20,20 +20,37 @@ def home(request):
 
 # ---------- AUTH ----------
 def student_signup(request):
-    if request.method == "POST":
-        user = User.objects.create_user(
-            username=request.POST["email"],
-            first_name=request.POST["name"],
-            email=request.POST["email"],
-            password=request.POST["password"],
-        )
-        Student.objects.create(
-            user=user,
-            class_semester=request.POST["class_semester"]
-        )
-        return redirect("login")
-    return render(request, "signup_student.html")
 
+    if request.method == "POST":
+
+        email = request.POST.get("email")
+
+        # Prevent duplicate users
+        if User.objects.filter(username=email).exists():
+            dj_messages.error(request, "Email already registered")
+            return redirect("student_signup")
+
+        try:
+            user = User.objects.create_user(
+                username=email,
+                first_name=request.POST.get("name"),
+                email=email,
+                password=request.POST.get("password"),
+            )
+
+            Student.objects.create(
+                user=user,
+                class_semester=request.POST.get("class_semester")
+            )
+
+            dj_messages.success(request, "Account created successfully")
+            return redirect("login")
+
+        except Exception as e:
+            print(e)
+            dj_messages.error(request, "Signup failed")
+
+    return render(request, "signup_student.html")
 
 
 
