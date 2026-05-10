@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-white">📚 My Notes</h2>
+    </div>
+
+    <div class="row">
+        <!-- Upload Notes Section -->
+        <div class="col-lg-4 mb-4">
+            <div class="notes-card p-4">
+                <h4 class="mb-3">Upload Notes</h4>
+
+                <form method="POST" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Subject</label>
+                        {{ form.subject }}
+                    </div>
+
+                    <!-- 🔥 DRAG & DROP -->
+                    <div class="mb-3">
+                        <label class="form-label">Upload File</label>
+
+                        <div class="upload-box" id="uploadBox">
+                             <p>📂 Drag & Drop your file</p>
+                             <p class="small">or click to select</p>
+                         </div>
+
+                        <div style="display:none;">
+                            {{ form.file }}
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100">
+                        Upload Note
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Notes List Section -->
+        <div class="col-lg-8 mb-4">
+            <div class="notes-card p-4">
+                <h4 class="mb-3">Your Uploaded Notes</h4>
+
+                {% if notes %}
+                    <div class="row">
+                        {% for note in notes %}
+                        <div class="col-md-6 mb-3">
+                            <div class="single-note p-3">
+                                <h5 class="mb-2">{{ note.subject }}</h5>
+                                <p class="small mb-3">Uploaded note file</p>
+
+                                <div class="d-flex gap-2">
+                                    <a href="{{ note.file.url }}" target="_blank" class="btn btn-success btn-sm w-50">
+                                        View
+                                    </a>
+
+                                    <!-- Delete Button -->
+                                    <form method="POST" action="{% url 'delete_note' note.id %}">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-danger">
+                                             Delete
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Modal -->
+                        <div class="modal fade" id="deleteModal{{ note.id }}" tabindex="-1">
+                          <div class="modal-dialog">
+                            <div class="modal-content text-dark">
+                              <div class="modal-header">
+                                <h5 class="modal-title">Confirm Delete</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                              </div>
+
+                              <div class="modal-body">
+                                Delete <b>{{ note.subject }}</b>?
+                              </div>
+
+                              <div class="modal-footer">
+                                <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <a href="{% url 'delete_note' note.id %}" class="btn btn-danger">
+                                    Yes, Delete
+                                </a>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-box text-center py-5">
+                        <h5>No notes uploaded yet</h5>
+                        <p class="mb-0">Upload your first note to get started.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 🔥 DRAG DROP SCRIPT -->
+<script>
+const uploadBox = document.getElementById("uploadBox");
+const fileInput = document.querySelector("input[type='file']");
+
+uploadBox.addEventListener("click", () => fileInput.click());
+
+uploadBox.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    uploadBox.classList.add("dragover");
+});
+
+uploadBox.addEventListener("dragleave", () => {
+    uploadBox.classList.remove("dragover");
+});
+
+uploadBox.addEventListener("drop", (e) => {
+    e.preventDefault();
+    uploadBox.classList.remove("dragover");
+    fileInput.files = e.dataTransfer.files;
+    uploadBox.innerHTML = "✅ " + fileInput.files[0].name;
+});
+
+fileInput.addEventListener("change", () => {
+    uploadBox.innerHTML = "✅ " + fileInput.files[0].name;
+});
+</script>
+
+{% endblock %}

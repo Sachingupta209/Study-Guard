@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h2 class="mb-5">Welcome, {{ student.user.first_name }} 👋</h2>
+
+<div class="row">
+
+    <!-- Notes -->
+    <div class="col-md-3 mb-4">
+        <div class="card p-4 text-center text-dark">
+            <h5>📚 Notes</h5>
+            <h2>{{ total_notes }}</h2>
+            <a href="{% url 'student_notes' %}" class="btn btn-primary btn-sm mt-2">
+                View
+            </a>
+        </div>
+    </div>
+
+    <!-- Quiz -->
+    <div class="col-md-3 mb-4">
+        <div class="card p-4 text-center text-dark">
+            <h5>🧠 Quizzes</h5>
+            <h2>{{ total_quizzes }}</h2>
+            <a href="{% url 'quiz_home' %}" class="btn btn-success btn-sm mt-2">
+                Start
+            </a>
+        </div>
+    </div>
+
+    <!-- Avg Score -->
+    <div class="col-md-3 mb-4">
+        <div class="card p-4 text-center text-dark">
+            <h5>📊 Avg Score</h5>
+            <h2>{{ avg_score }}%</h2>
+            <a href="{% url 'student_progress' %}" class="btn btn-warning btn-sm mt-2">
+                Details
+            </a>
+        </div>
+    </div>
+
+    <!-- Last Score -->
+    <div class="col-md-3 mb-4">
+        <div class="card p-4 text-center text-dark">
+            <h5>🔥 Last Score</h5>
+            <h2>{{ last_score }}%</h2>
+            <a href="{% url 'student_progress' %}" class="btn btn-info btn-sm mt-2">
+                View
+            </a>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}
