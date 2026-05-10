@@ -19,40 +19,54 @@ def home(request):
 
 
 # ---------- AUTH ----------
+from django.contrib import messages as dj_messages
+from django.contrib.auth.models import User
+from django.shortcuts import render, redirect
+from .models import Student
+
 def student_signup(request):
 
     if request.method == "POST":
 
-        email = request.POST.get("email")
-
-        # Prevent duplicate users
-        if User.objects.filter(username=email).exists():
-            dj_messages.error(request, "Email already registered")
-            return redirect("student_signup")
-
         try:
+            name = request.POST.get("name")
+            email = request.POST.get("email")
+            password = request.POST.get("password")
+            class_semester = request.POST.get("class_semester")
+
+            # Empty field validation
+            if not name or not email or not password or not class_semester:
+                dj_messages.error(request, "All fields are required")
+                return redirect("student_signup")
+
+            # Duplicate email check
+            if User.objects.filter(username=email).exists():
+                dj_messages.error(request, "Email already exists")
+                return redirect("student_signup")
+
+            # Create user
             user = User.objects.create_user(
                 username=email,
-                first_name=request.POST.get("name"),
+                first_name=name,
                 email=email,
-                password=request.POST.get("password"),
+                password=password
             )
 
+            # Create student profile
             Student.objects.create(
                 user=user,
-                class_semester=request.POST.get("class_semester")
+                class_semester=class_semester
             )
 
             dj_messages.success(request, "Account created successfully")
             return redirect("login")
 
         except Exception as e:
-            print(e)
-            dj_messages.error(request, "Signup failed")
+            print("Signup Error:", e)
+            dj_messages.error(request, f"Error: {str(e)}")
+            return redirect("student_signup")
 
     return render(request, "signup_student.html")
-
-
 
 def parent_signup(request):
     if request.method == "POST":
