@@ -29,7 +29,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 SECRET_KEY = 'django-insecure-fw(&9z_f!7@=r@21qen80guf4p$jy9_wosrcipynw4ji%1scj_'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = [
     'study-guard-1.onrender.com',
