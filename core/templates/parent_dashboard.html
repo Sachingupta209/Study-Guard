@@ -1,137 +1,203 @@
 {% extends 'base.html' %}
+
 {% block content %}
 
+<div class="container-fluid">
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Parent Dashboard | Smart Study Guard</title>
+    <div class="row">
 
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <!-- Sidebar -->
 
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</head>
+        <div class="col-md-2 mb-4">
 
-<body class="bg-light">
+            <div class="card-box">
 
-<!-- ===== HEADER ===== -->
-<nav class="navbar navbar-dark" style="background-color:#0d6efd;">
-  <div class="container-fluid">
-    <span class="navbar-brand">Smart Study Guard</span>
+                <h4 class="text-primary mb-4">
 
-    <div class="d-flex gap-2">
-      <a href="{% url 'logout' %}" class="btn btn-outline-light btn-sm">Logout</a>
+                    Parent Panel
+
+                </h4>
+
+                <div class="d-grid gap-3">
+
+                    <a href="/parent/dashboard/"
+                    class="btn btn-primary">
+
+                        Dashboard
+
+                    </a>
+
+                    <a href="/logout/"
+                    class="btn btn-outline-danger">
+
+                        Logout
+
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- Main Content -->
+
+        <div class="col-md-10">
+
+            <h2 class="dashboard-title">
+
+                Welcome Parent
+
+            </h2>
+
+            <!-- Student Info -->
+
+            <div class="row g-4 mb-5">
+
+                <div class="col-md-4">
+
+                    <div class="card-box text-center">
+
+                        <h5 class="text-secondary">
+
+                            Student Name
+
+                        </h5>
+
+                        <div class="stat-number text-primary">
+
+                            {{ student.user.first_name }}
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="col-md-4">
+
+                    <div class="card-box text-center">
+
+                        <h5 class="text-secondary">
+
+                            Class / Semester
+
+                        </h5>
+
+                        <div class="stat-number text-success">
+
+                            {{ student.class_semester }}
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="col-md-4">
+
+                    <div class="card-box text-center">
+
+                        <h5 class="text-secondary">
+
+                            Total Quizzes
+
+                        </h5>
+
+                        <div class="stat-number text-info">
+
+                            {{ quizzes.count }}
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- Quiz History -->
+
+            <div class="card-box">
+
+                <h3 class="text-primary mb-4">
+
+                    Student Quiz Performance
+
+                </h3>
+
+                {% if quizzes %}
+
+                    <div class="table-responsive">
+
+                        <table class="table table-hover">
+
+                            <thead>
+
+                                <tr>
+
+                                    <th>Subject</th>
+                                    <th>Score</th>
+                                    <th>Date</th>
+
+                                </tr>
+
+                            </thead>
+
+                            <tbody>
+
+                                {% for quiz in quizzes %}
+
+                                <tr>
+
+                                    <td>
+
+                                        {{ quiz.subject }}
+
+                                    </td>
+
+                                    <td>
+
+                                        <span class="badge bg-success fs-6">
+
+                                            {{ quiz.score }}%
+
+                                        </span>
+
+                                    </td>
+
+                                    <td>
+
+                                        {{ quiz.date }}
+
+                                    </td>
+
+                                </tr>
+
+                                {% endfor %}
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                {% else %}
+
+                    <div class="alert alert-warning">
+
+                        No quiz records available.
+
+                    </div>
+
+                {% endif %}
+
+            </div>
+
+        </div>
+
     </div>
-  </div>
-</nav>
-
-<div class="container mt-5">
-
-  <h3 class="text-center mb-4">
-     Parent Dashboard – {{ student.user.first_name }}
-  </h3>
-
-  <!-- SUMMARY CARDS -->
-  <div class="row text-center mb-4">
-
-    <div class="col-md-3 mb-3">
-      <div class="card p-3 shadow-sm">
-        <h6>Total Quizzes</h6>
-        <h3>{{ total_quizzes }}</h3>
-      </div>
-    </div>
-
-    <div class="col-md-3 mb-3">
-      <div class="card p-3 shadow-sm">
-        <h6>Average Score</h6>
-        <h3>{{ average_score }}%</h3>
-      </div>
-    </div>
-
-    <div class="col-md-3 mb-3">
-      <div class="card p-3 shadow-sm">
-        <h6>Best Score</h6>
-        <h3>{{ best_score }}%</h3>
-      </div>
-    </div>
-
-    <div class="col-md-3 mb-3">
-      <div class="card p-3 shadow-sm">
-        <h6>Lowest Score</h6>
-        <h3>{{ worst_score }}%</h3>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- CHART -->
-  <div class="card p-4 shadow-sm mb-4">
-    <h5 class="text-center mb-3">Quiz Performance</h5>
-    <canvas id="parentChart" height="120"></canvas>
-  </div>
-
-  <!-- QUIZ HISTORY -->
-  <div class="card p-3 shadow-sm">
-    <h5 class="mb-3"> Quiz History</h5>
-
-    <table class="table table-bordered table-striped">
-      <thead class="table-primary">
-        <tr>
-          <th>#</th>
-          <th>Subject</th>
-          <th>Score (%)</th>
-          <th>Date</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for quiz in quizzes %}
-        <tr>
-          <td>{{ forloop.counter }}</td>
-          <td>{{ quiz.subject }}</td>
-          <td>{{ quiz.score }}</td>
-          <td>{{ quiz.date|date:"d M Y" }}</td>
-        </tr>
-        {% empty %}
-        <tr>
-          <td colspan="4" class="text-center">No quiz data available</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
 
 </div>
 
-<!-- ===== CHART SCRIPT ===== -->
-<script>
-  const parentScores = {{ scores|safe|default:'[]' }};
-
-  if (parentScores.length > 0) {
-    new Chart(document.getElementById("parentChart"), {
-      type: "line",
-      data: {
-        labels: parentScores.map((_, i) => "Quiz " + (i + 1)),
-        datasets: [{
-          label: "Score (%)",
-          data: parentScores,
-          borderColor: "#0d6efd",
-          backgroundColor: "rgba(13,110,253,0.2)",
-          tension: 0.3,
-          borderWidth: 3,
-          fill: true
-        }]
-      },
-      options: {
-        scales: {
-          y: { beginAtZero: true, max: 100 }
-        }
-      }
-    });
-  }
-</script>
-
-</body>
-</html>
 {% endblock %}
