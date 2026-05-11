@@ -315,149 +315,82 @@ def quiz_home(request):
     })
 
 
-# ---------- GENERATE QUIZ ----------
 @login_required
 def generate_quiz(request, note_id):
 
-    try:
+    note = get_object_or_404(
+        Notes,
+        id=note_id
+    )
 
-        note = get_object_or_404(
-            Notes,
-            id=note_id
-        )
+    # Create quiz
+    quiz = Quiz.objects.create(
 
-        reader = PdfReader(note.file.path)
+        student=request.user.student,
 
-        content = ""
+        subject=note.subject
 
-        for page in reader.pages:
+    )
 
-            text = page.extract_text()
+    # Create manual demo questions
+    Question.objects.create(
 
-            if text:
-                content += text + " "
+        quiz=quiz,
 
-        content = content.strip()
+        question_text="What is Java?",
 
-        print("PDF CONTENT:", content)
+        option_a="Programming Language",
 
-        # Check PDF text
-        if len(content) < 50:
+        option_b="Database",
 
-            dj_messages.error(
-                request,
-                "PDF has very little readable text."
-            )
+        option_c="Browser",
 
-            return redirect("quiz_home")
+        option_d="Hardware",
 
-        sentences = regex.split(r'[.\n]', content)
+        correct_answer="Programming Language"
 
-        sentences = [
+    )
 
-            s.strip()
+    Question.objects.create(
 
-            for s in sentences
+        quiz=quiz,
 
-            if len(s.split()) > 5
+        question_text="Which keyword is used for inheritance?",
 
-        ]
+        option_a="this",
 
-        print("SENTENCES:", sentences)
+        option_b="super",
 
-        if not sentences:
+        option_c="extends",
 
-            dj_messages.error(
-                request,
-                "No valid sentences found."
-            )
+        option_d="implements",
 
-            return redirect("quiz_home")
+        correct_answer="extends"
 
-        quiz = Quiz.objects.create(
+    )
 
-            student=request.user.student,
+    Question.objects.create(
 
-            subject=note.subject
+        quiz=quiz,
 
-        )
+        question_text="Python is a ?",
 
-        question_count = 0
+        option_a="Programming Language",
 
-        for sentence in sentences[:10]:
+        option_b="Operating System",
 
-            words = [
+        option_c="Browser",
 
-                w for w in sentence.split()
+        option_d="Compiler",
 
-                if len(w) > 4 and w.isalpha()
+        correct_answer="Programming Language"
 
-            ]
+    )
 
-            if len(words) < 4:
-                continue
-
-            correct = random.choice(words)
-
-            question_text = sentence.replace(
-                correct,
-                "_____"
-            )
-
-            wrong_options = random.sample(words, 3)
-
-            options = wrong_options + [correct]
-
-            random.shuffle(options)
-
-            Question.objects.create(
-
-                quiz=quiz,
-
-                question_text=question_text,
-
-                option_a=options[0],
-
-                option_b=options[1],
-
-                option_c=options[2],
-
-                option_d=options[3],
-
-                correct_answer=correct
-
-            )
-
-            question_count += 1
-
-        print("QUESTIONS CREATED:", question_count)
-
-        if question_count == 0:
-
-            quiz.delete()
-
-            dj_messages.error(
-                request,
-                "Quiz generation failed."
-            )
-
-            return redirect("quiz_home")
-
-        return redirect(
-            "take_quiz",
-            quiz_id=quiz.id
-        )
-
-    except Exception as e:
-
-        print("QUIZ ERROR:", e)
-
-        dj_messages.error(
-            request,
-            f"Error: {str(e)}"
-        )
-
-        return redirect("quiz_home")
+    return redirect(
+        "take_quiz",
+        quiz_id=quiz.id
+    )
 # ---------- TAKE QUIZ ----------
 @login_required
 def take_quiz(request, quiz_id):
