@@ -325,16 +325,37 @@ def generate_quiz(request, note_id):
 
     try:
 
-        reader = PdfReader(note.file.path)
-
         text = ""
 
-        for page in reader.pages:
+        file_path = note.file.path
 
-            extracted = page.extract_text()
+        # TXT FILE SUPPORT
+        if file_path.endswith(".txt"):
 
-            if extracted:
-                text += extracted
+            with open(file_path, "r", encoding="utf-8") as file:
+
+                text = file.read()
+
+        # PDF FILE SUPPORT
+        elif file_path.endswith(".pdf"):
+
+            reader = PdfReader(file_path)
+
+            for page in reader.pages:
+
+                extracted = page.extract_text()
+
+                if extracted:
+                    text += extracted
+
+        else:
+
+            dj_messages.error(
+                request,
+                "Only PDF and TXT files are supported."
+            )
+
+            return redirect("quiz_home")
 
         # Clean text
         sentences = text.split(".")
@@ -346,13 +367,14 @@ def generate_quiz(request, note_id):
             s = s.strip()
 
             if len(s.split()) > 6:
+
                 valid_sentences.append(s)
 
         if len(valid_sentences) == 0:
 
             dj_messages.error(
                 request,
-                "No readable text found in PDF."
+                "No readable content found."
             )
 
             return redirect("quiz_home")
@@ -425,7 +447,7 @@ def generate_quiz(request, note_id):
 
             dj_messages.error(
                 request,
-                "Could not generate quiz from PDF."
+                "Quiz generation failed."
             )
 
             return redirect("quiz_home")
