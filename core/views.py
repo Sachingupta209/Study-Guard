@@ -23,22 +23,23 @@ def student_signup(request):
     if request.method == "POST":
 
         try:
+            print(request.POST)
+
             name = request.POST.get("name")
             email = request.POST.get("email")
             password = request.POST.get("password")
             class_semester = request.POST.get("class_semester")
 
-            # Validation
             if not name or not email or not password or not class_semester:
-                dj_messages.error(request, "All fields are required")
-                return redirect("student_signup")
+                return render(request, "signup_student.html", {
+                    "error": "All fields are required"
+                })
 
-            # Duplicate email check
             if User.objects.filter(username=email).exists():
-                dj_messages.error(request, "Email already exists")
-                return redirect("student_signup")
+                return render(request, "signup_student.html", {
+                    "error": "Email already exists"
+                })
 
-            # Create user
             user = User.objects.create_user(
                 username=email,
                 first_name=name,
@@ -46,26 +47,22 @@ def student_signup(request):
                 password=password
             )
 
-            try:
-                # Create student profile
-                Student.objects.create(
-                    user=user,
-                    class_semester=class_semester
-                )
+            student = Student.objects.create(
+                user=user,
+                class_semester=class_semester
+            )
 
-            except Exception as e:
-                user.delete()
-                print("Student Create Error:", e)
-                dj_messages.error(request, f"Student Error: {str(e)}")
-                return redirect("student_signup")
+            login(request, user)
 
-            dj_messages.success(request, "Account created successfully")
-            return redirect("login")
+            return redirect("student_dashboard")
 
         except Exception as e:
-            print("Signup Error:", e)
-            dj_messages.error(request, f"Error: {str(e)}")
-            return redirect("student_signup")
+
+            print("SIGNUP ERROR:", str(e))
+
+            return render(request, "signup_student.html", {
+                "error": str(e)
+            })
 
     return render(request, "signup_student.html")
 

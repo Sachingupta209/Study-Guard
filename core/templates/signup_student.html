@@ -1,4 +1,8 @@
-
+{% if error %}
+<div style="color:red;">
+    {{ error }}
+</div>
+{% endif %}
 {% extends 'base.html' %}
 {% block content %}
 
