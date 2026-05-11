@@ -22,7 +22,7 @@
         </div>
 
         
-        <form method="POST" action="/student/quiz/submit/{{ quiz.id }}/">>
+        <form method="POST" action="{% url 'submit_quiz' quiz.id %}">
 
             {% csrf_token %}
 
