@@ -326,10 +326,6 @@ def generate_quiz(request, note_id):
             id=note_id
         )
 
-        if note.student != request.user.student:
-
-            return redirect("quiz_home")
-
         reader = PdfReader(note.file.path)
 
         content = ""
@@ -343,11 +339,14 @@ def generate_quiz(request, note_id):
 
         content = content.strip()
 
-        if not content:
+        print("PDF CONTENT:", content)
+
+        # Check PDF text
+        if len(content) < 50:
 
             dj_messages.error(
                 request,
-                "PDF text could not be extracted."
+                "PDF has very little readable text."
             )
 
             return redirect("quiz_home")
@@ -360,98 +359,78 @@ def generate_quiz(request, note_id):
 
             for s in sentences
 
-            if len(s.split()) > 6
+            if len(s.split()) > 5
 
         ]
+
+        print("SENTENCES:", sentences)
 
         if not sentences:
 
             dj_messages.error(
                 request,
-                "Not enough content found."
+                "No valid sentences found."
             )
 
             return redirect("quiz_home")
 
         quiz = Quiz.objects.create(
+
             student=request.user.student,
+
             subject=note.subject
+
         )
-
-        keywords = set()
-
-        for sentence in sentences:
-
-            for word in sentence.split():
-
-                word = word.strip()
-
-                if len(word) > 4 and word.isalpha():
-
-                    keywords.add(word)
-
-        keywords = list(keywords)
 
         question_count = 0
 
-        for sentence in sentences:
+        for sentence in sentences[:10]:
 
-            words = sentence.split()
+            words = [
 
-            candidates = [
-
-                w for w in words
+                w for w in sentence.split()
 
                 if len(w) > 4 and w.isalpha()
 
             ]
 
-            if not candidates:
+            if len(words) < 4:
                 continue
 
-            correct = random.choice(candidates)
+            correct = random.choice(words)
 
             question_text = sentence.replace(
                 correct,
                 "_____"
             )
 
-            try:
+            wrong_options = random.sample(words, 3)
 
-                options = set(
-                    random.sample(
-                        keywords,
-                        min(6, len(keywords))
-                    )
-                )
+            options = wrong_options + [correct]
 
-                options.add(correct)
+            random.shuffle(options)
 
-                if len(options) < 4:
-                    continue
+            Question.objects.create(
 
-                options = random.sample(
-                    list(options),
-                    4
-                )
+                quiz=quiz,
 
-                Question.objects.create(
-                    quiz=quiz,
-                    question_text=question_text,
-                    option_a=options[0],
-                    option_b=options[1],
-                    option_c=options[2],
-                    option_d=options[3],
-                    correct_answer=correct
-                )
+                question_text=question_text,
 
-                question_count += 1
+                option_a=options[0],
 
-            except:
-                continue
+                option_b=options[1],
 
-            if question_count >= 10:
-                break
+                option_c=options[2],
+
+                option_d=options[3],
+
+                correct_answer=correct
+
+            )
+
+            question_count += 1
+
+        print("QUESTIONS CREATED:", question_count)
 
         if question_count == 0:
 
@@ -471,14 +450,14 @@ def generate_quiz(request, note_id):
 
     except Exception as e:
 
+        print("QUIZ ERROR:", e)
+
         dj_messages.error(
             request,
-            str(e)
+            f"Error: {str(e)}"
         )
 
         return redirect("quiz_home")
-
-
 # ---------- TAKE QUIZ ----------
 @login_required
 def take_quiz(request, quiz_id):
