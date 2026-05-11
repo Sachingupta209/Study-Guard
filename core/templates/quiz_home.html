@@ -10,63 +10,149 @@
 
     <div class="row">
 
-        <!-- Generate Quiz -->
+       # ---------- GENERATE QUIZ ----------
+@login_required
+def generate_quiz(request, note_id):
 
-        <div class="col-md-6 mb-4">
+    try:
 
-            <div class="card-box">
+        note = get_object_or_404(
+            Notes,
+            id=note_id
+        )
 
-                <h4 class="text-primary mb-4">
-                    Generate Quiz
-                </h4>
+        reader = PdfReader(note.file.path)
 
-                {% if notes %}
+        content = ""
 
-                    <div class="list-group">
+        for page in reader.pages:
 
-                        {% for note in notes %}
+            text = page.extract_text()
 
-                            <div class="list-group-item d-flex justify-content-between align-items-center">
+            if text:
+                content += text + " "
 
-                                <div>
+        content = content.strip()
 
-                                    <h6 class="mb-1">
-                                        {{ note.subject }}
-                                    </h6>
+        print("PDF CONTENT:", content)
 
-                                    <small class="text-muted">
-                                        Uploaded Notes
-                                    </small>
+        # Check PDF text
+        if len(content) < 50:
 
-                                </div>
+            dj_messages.error(
+                request,
+                "PDF has very little readable text."
+            )
 
-                                <a href="/student/quiz/generate/{{ note.id }}/"
-                                class="btn btn-success btn-sm">
+            return redirect("quiz_home")
 
-                                    Generate
+        sentences = regex.split(r'[.\n]', content)
 
-                                </a>
+        sentences = [
 
-                            </div>
+            s.strip()
 
-                        {% endfor %}
+            for s in sentences
 
-                    </div>
+            if len(s.split()) > 5
 
-                {% else %}
+        ]
 
-                    <div class="alert alert-warning">
+        print("SENTENCES:", sentences)
 
-                        Upload notes first to generate quizzes.
+        if not sentences:
 
-                    </div>
+            dj_messages.error(
+                request,
+                "No valid sentences found."
+            )
 
-                {% endif %}
+            return redirect("quiz_home")
 
-            </div>
+        quiz = Quiz.objects.create(
 
-        </div>
+            student=request.user.student,
 
+            subject=note.subject
+
+        )
+
+        question_count = 0
+
+        for sentence in sentences[:10]:
+
+            words = [
+
+                w for w in sentence.split()
+
+                if len(w) > 4 and w.isalpha()
+
+            ]
+
+            if len(words) < 4:
+                continue
+
+            correct = random.choice(words)
+
+            question_text = sentence.replace(
+                correct,
+                "_____"
+            )
+
+            wrong_options = random.sample(words, 3)
+
+            options = wrong_options + [correct]
+
+            random.shuffle(options)
+
+            Question.objects.create(
+
+                quiz=quiz,
+
+                question_text=question_text,
+
+                option_a=options[0],
+
+                option_b=options[1],
+
+                option_c=options[2],
+
+                option_d=options[3],
+
+                correct_answer=correct
+
+            )
+
+            question_count += 1
+
+        print("QUESTIONS CREATED:", question_count)
+
+        if question_count == 0:
+
+            quiz.delete()
+
+            dj_messages.error(
+                request,
+                "Quiz generation failed."
+            )
+
+            return redirect("quiz_home")
+
+        return redirect(
+            "take_quiz",
+            quiz_id=quiz.id
+        )
+
+    except Exception as e:
+
+        print("QUIZ ERROR:", e)
+
+        dj_messages.error(
+            request,
+            f"Error: {str(e)}"
+        )
+
+        return redirect("quiz_home")
         <!-- Quiz History -->
 
         <div class="col-md-6 mb-4">
