@@ -2,52 +2,170 @@
 
 {% block content %}
 
-<h2 class="mb-5">Welcome, {{ student.user.first_name }} 👋</h2>
+<div class="container-fluid">
 
-<div class="row">
+    <div class="row">
 
-    <!-- Notes -->
-    <div class="col-md-3 mb-4">
-        <div class="card p-4 text-center text-dark">
-            <h5>📚 Notes</h5>
-            <h2>{{ total_notes }}</h2>
-            <a href="{% url 'student_notes' %}" class="btn btn-primary btn-sm mt-2">
-                View
-            </a>
+        <!-- Sidebar -->
+
+        <div class="col-md-2 mb-4">
+
+            <div class="card-box">
+
+                <h4 class="text-primary mb-4">
+                    Dashboard
+                </h4>
+
+                <div class="d-grid gap-3">
+
+                    <a href="/student/dashboard/"
+                    class="btn btn-primary">
+
+                        Dashboard
+                    </a>
+
+                    <a href="/student/notes/"
+                    class="btn btn-outline-primary">
+
+                        Notes
+                    </a>
+
+                    <a href="/quiz/"
+                    class="btn btn-outline-success">
+
+                        Quiz
+                    </a>
+
+                    <a href="/progress/"
+                    class="btn btn-outline-dark">
+
+                        Progress
+                    </a>
+
+                    <a href="/logout/"
+                    class="btn btn-outline-danger">
+
+                        Logout
+                    </a>
+
+                </div>
+
+            </div>
+
         </div>
-    </div>
 
-    <!-- Quiz -->
-    <div class="col-md-3 mb-4">
-        <div class="card p-4 text-center text-dark">
-            <h5>🧠 Quizzes</h5>
-            <h2>{{ total_quizzes }}</h2>
-            <a href="{% url 'quiz_home' %}" class="btn btn-success btn-sm mt-2">
-                Start
-            </a>
-        </div>
-    </div>
+        <!-- Main Dashboard -->
 
-    <!-- Avg Score -->
-    <div class="col-md-3 mb-4">
-        <div class="card p-4 text-center text-dark">
-            <h5>📊 Avg Score</h5>
-            <h2>{{ avg_score }}%</h2>
-            <a href="{% url 'student_progress' %}" class="btn btn-warning btn-sm mt-2">
-                Details
-            </a>
-        </div>
-    </div>
+        <div class="col-md-10">
 
-    <!-- Last Score -->
-    <div class="col-md-3 mb-4">
-        <div class="card p-4 text-center text-dark">
-            <h5>🔥 Last Score</h5>
-            <h2>{{ last_score }}%</h2>
-            <a href="{% url 'student_progress' %}" class="btn btn-info btn-sm mt-2">
-                View
-            </a>
+            <h2 class="dashboard-title">
+
+                Welcome {{ student.user.first_name }}
+
+            </h2>
+
+            <div class="row g-4">
+
+                <div class="col-md-3">
+
+                    <div class="card-box text-center">
+
+                        <h5 class="text-secondary">
+                            Total Notes
+                        </h5>
+
+                        <div class="stat-number">
+                            {{ total_notes }}
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="col-md-3">
+
+                    <div class="card-box text-center">
+
+                        <h5 class="text-secondary">
+                            Total Quizzes
+                        </h5>
+
+                        <div class="stat-number">
+                            {{ total_quizzes }}
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="col-md-3">
+
+                    <div class="card-box text-center">
+
+                        <h5 class="text-secondary">
+                            Average Score
+                        </h5>
+
+                        <div class="stat-number">
+                            {{ avg_score }}%
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="col-md-3">
+
+                    <div class="card-box text-center">
+
+                        <h5 class="text-secondary">
+                            Last Score
+                        </h5>
+
+                        <div class="stat-number">
+                            {{ last_score }}%
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- Quick Actions -->
+
+            <div class="card-box mt-5">
+
+                <h4 class="mb-4 text-primary">
+                    Quick Actions
+                </h4>
+
+                <div class="d-flex flex-wrap gap-3">
+
+                    <a href="/student/notes/"
+                    class="btn btn-primary">
+
+                        Upload Notes
+                    </a>
+
+                    <a href="/quiz/"
+                    class="btn btn-success">
+
+                        Generate Quiz
+                    </a>
+
+                    <a href="/progress/"
+                    class="btn btn-dark">
+
+                        View Progress
+                    </a>
+
+                </div>
+
+            </div>
+
         </div>
+
     </div>
 
 </div>
