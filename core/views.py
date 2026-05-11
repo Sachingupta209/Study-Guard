@@ -325,18 +325,24 @@ def generate_quiz(request, note_id):
 
     try:
 
-        text = ""
-
         file_path = note.file.path
 
-        # TXT FILE SUPPORT
+        text = ""
+
+        # ---------- TXT SUPPORT ----------
+
         if file_path.endswith(".txt"):
 
-            with open(file_path, "r", encoding="utf-8") as file:
+            with open(
+                file_path,
+                "r",
+                encoding="utf-8"
+            ) as f:
 
-                text = file.read()
+                text = f.read()
 
-        # PDF FILE SUPPORT
+        # ---------- PDF SUPPORT ----------
+
         elif file_path.endswith(".pdf"):
 
             reader = PdfReader(file_path)
@@ -352,12 +358,15 @@ def generate_quiz(request, note_id):
 
             dj_messages.error(
                 request,
-                "Only PDF and TXT files are supported."
+                "Only PDF and TXT files supported."
             )
 
             return redirect("quiz_home")
 
-        # Clean text
+        # ---------- CLEAN TEXT ----------
+
+        text = text.replace("\n", " ")
+
         sentences = text.split(".")
 
         valid_sentences = []
@@ -366,7 +375,7 @@ def generate_quiz(request, note_id):
 
             s = s.strip()
 
-            if len(s.split()) > 6:
+            if len(s.split()) >= 5:
 
                 valid_sentences.append(s)
 
@@ -379,7 +388,8 @@ def generate_quiz(request, note_id):
 
             return redirect("quiz_home")
 
-        # Create quiz
+        # ---------- CREATE QUIZ ----------
+
         quiz = Quiz.objects.create(
 
             student=request.user.student,
@@ -388,36 +398,54 @@ def generate_quiz(request, note_id):
 
         )
 
-        count = 0
+        question_count = 0
 
-        for sentence in valid_sentences[:5]:
+        # ---------- GENERATE QUESTIONS ----------
+
+        for sentence in valid_sentences[:10]:
 
             words = sentence.split()
 
-            keywords = [
+            keywords = []
 
-                w for w in words
+            for w in words:
 
-                if len(w) > 4 and w.isalpha()
+                clean_word = w.strip(",.!?():;").lower()
 
-            ]
+                if len(clean_word) > 4 and clean_word.isalpha():
 
+                    keywords.append(clean_word)
+
+            keywords = list(set(keywords))
+
+            # minimum 4 words needed
             if len(keywords) < 4:
                 continue
 
-            answer = random.choice(keywords)
+            correct_answer = random.choice(keywords)
 
-            question = sentence.replace(
-                answer,
+            question_text = sentence.replace(
+                correct_answer,
                 "_____"
             )
 
-            wrong = random.sample(
-                keywords,
+            wrong_answers = [
+
+                w for w in keywords
+
+                if w != correct_answer
+
+            ]
+
+            if len(wrong_answers) < 3:
+                continue
+
+            wrong_options = random.sample(
+                wrong_answers,
                 3
             )
 
-            options = wrong + [answer]
+            options = wrong_options + [correct_answer]
 
             random.shuffle(options)
 
@@ -425,7 +453,7 @@ def generate_quiz(request, note_id):
 
                 quiz=quiz,
 
-                question_text=question,
+                question_text=question_text,
 
                 option_a=options[0],
 
@@ -435,13 +463,15 @@ def generate_quiz(request, note_id):
 
                 option_d=options[3],
 
-                correct_answer=answer
+                correct_answer=correct_answer
 
             )
 
-            count += 1
+            question_count += 1
 
-        if count == 0:
+        # ---------- NO QUESTIONS ----------
+
+        if question_count == 0:
 
             quiz.delete()
 
@@ -451,6 +481,8 @@ def generate_quiz(request, note_id):
             )
 
             return redirect("quiz_home")
+
+        # ---------- SUCCESS ----------
 
         return redirect(
             "take_quiz",
