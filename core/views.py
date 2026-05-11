@@ -1,3 +1,6 @@
+from nltk.tokenize import sent_tokenize
+from nltk.corpus import stopwords
+from nltk.corpus import stopwords
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
@@ -400,32 +403,94 @@ def generate_quiz(request, note_id):
 
         question_count = 0
 
-        # ---------- GENERATE QUESTIONS ----------
+@login_required
+def generate_quiz(request, note_id):
 
-        for sentence in valid_sentences[:10]:
+    note = get_object_or_404(
+        Notes,
+        id=note_id
+    )
+
+    try:
+
+        file_path = note.file.path
+
+        text = ""
+
+        # TXT
+        if file_path.endswith(".txt"):
+
+            with open(
+                file_path,
+                "r",
+                encoding="utf-8"
+            ) as file:
+
+                text = file.read()
+
+        # PDF
+        elif file_path.endswith(".pdf"):
+
+            reader = PdfReader(file_path)
+
+            for page in reader.pages:
+
+                extracted = page.extract_text()
+
+                if extracted:
+                    text += extracted
+
+        else:
+
+            dj_messages.error(
+                request,
+                "Only PDF and TXT supported."
+            )
+
+            return redirect("quiz_home")
+
+        # NLP sentence split
+        sentences = sent_tokenize(text)
+
+        stop_words = set(stopwords.words("english"))
+
+        quiz = Quiz.objects.create(
+
+            student=request.user.student,
+
+            subject=note.subject
+
+        )
+
+        question_count = 0
+
+        for sentence in sentences[:10]:
 
             words = sentence.split()
 
             keywords = []
 
-            for w in words:
+            for word in words:
 
-                clean_word = w.strip(",.!?():;").lower()
+                clean = word.lower().strip(".,!?()")
 
-                if len(clean_word) > 4 and clean_word.isalpha():
+                if (
+                    clean.isalpha()
+                    and len(clean) > 4
+                    and clean not in stop_words
+                ):
 
-                    keywords.append(clean_word)
+                    keywords.append(clean)
 
             keywords = list(set(keywords))
 
-            # minimum 4 words needed
             if len(keywords) < 4:
                 continue
 
-            correct_answer = random.choice(keywords)
+            answer = random.choice(keywords)
 
             question_text = sentence.replace(
-                correct_answer,
+                answer,
                 "_____"
             )
 
@@ -433,7 +498,7 @@ def generate_quiz(request, note_id):
 
                 w for w in keywords
 
-                if w != correct_answer
+                if w != answer
 
             ]
 
@@ -445,7 +510,7 @@ def generate_quiz(request, note_id):
                 3
             )
 
-            options = wrong_options + [correct_answer]
+            options = wrong_options + [answer]
 
             random.shuffle(options)
 
@@ -463,13 +528,11 @@ def generate_quiz(request, note_id):
 
                 option_d=options[3],
 
-                correct_answer=correct_answer
+                correct_answer=answer
 
             )
 
             question_count += 1
-
-        # ---------- NO QUESTIONS ----------
 
         if question_count == 0:
 
@@ -477,12 +540,10 @@ def generate_quiz(request, note_id):
 
             dj_messages.error(
                 request,
-                "Quiz generation failed."
+                "Could not generate quiz."
             )
 
             return redirect("quiz_home")
-
-        # ---------- SUCCESS ----------
 
         return redirect(
             "take_quiz",
