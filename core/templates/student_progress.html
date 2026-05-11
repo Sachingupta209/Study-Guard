@@ -6,7 +6,7 @@
 
     <h2 class="dashboard-title">
 
-        Student Progress
+        Student Progress Analytics
 
     </h2>
 
@@ -88,77 +88,162 @@
 
     </div>
 
-    <!-- Quiz Scores Table -->
+    <!-- Chart -->
+
+    <div class="card-box mb-5">
+
+        <h3 class="text-primary mb-4">
+
+            Quiz Performance Chart
+
+        </h3>
+
+        <canvas id="scoreChart"></canvas>
+
+    </div>
+
+    <!-- Table -->
 
     <div class="card-box">
 
         <h3 class="text-primary mb-4">
 
-            Quiz Performance
+            Quiz Performance Table
 
         </h3>
 
-        {% if scores %}
+        {% if quizzes %}
 
-            <div class="table-responsive">
+        <div class="table-responsive">
 
-                <table class="table table-hover">
+            <table class="table table-hover">
 
-                    <thead>
+                <thead>
 
-                        <tr>
+                    <tr>
 
-                            <th>#</th>
-                            <th>Score</th>
+                        <th>#</th>
+                        <th>Subject</th>
+                        <th>Score</th>
 
-                        </tr>
+                    </tr>
 
-                    </thead>
+                </thead>
 
-                    <tbody>
+                <tbody>
 
-                        {% for score in scores %}
+                    {% for quiz in quizzes %}
 
-                        <tr>
+                    <tr>
 
-                            <td>
+                        <td>
 
-                                Quiz {{ forloop.counter }}
+                            {{ forloop.counter }}
 
-                            </td>
+                        </td>
 
-                            <td>
+                        <td>
 
-                                <span class="badge bg-success fs-6">
+                            {{ quiz.subject }}
 
-                                    {{ score }}%
+                        </td>
 
-                                </span>
+                        <td>
 
-                            </td>
+                            <span class="badge bg-success fs-6">
 
-                        </tr>
+                                {{ quiz.score }}%
 
-                        {% endfor %}
+                            </span>
 
-                    </tbody>
+                        </td>
 
-                </table>
+                    </tr>
 
-            </div>
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
 
         {% else %}
 
-            <div class="alert alert-warning">
+        <div class="alert alert-warning">
 
-                No quiz data available.
+            No quiz data available.
 
-            </div>
+        </div>
 
         {% endif %}
 
     </div>
 
 </div>
+
+<!-- Chart.js -->
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+
+const labels = [
+    {% for quiz in quizzes %}
+        "Quiz {{ forloop.counter }}",
+    {% endfor %}
+];
+
+const scores = [
+    {% for quiz in quizzes %}
+        {{ quiz.score }},
+    {% endfor %}
+];
+
+const ctx = document.getElementById('scoreChart');
+
+new Chart(ctx, {
+
+    type: 'line',
+
+    data: {
+
+        labels: labels,
+
+        datasets: [{
+
+            label: 'Quiz Scores',
+
+            data: scores,
+
+            borderWidth: 3,
+
+            tension: 0.3
+
+        }]
+
+    },
+
+    options: {
+
+        responsive: true,
+
+        scales: {
+
+            y: {
+
+                beginAtZero: true,
+
+                max: 100
+
+            }
+
+        }
+
+    }
+
+});
+
+</script>
 
 {% endblock %}
