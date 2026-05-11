@@ -254,102 +254,156 @@ def quiz_home(request):
 
 
 # ---------- GENERATE QUIZ ----------
-@login_required
-def generate_quiz(request, note_id):
+{% extends 'base.html' %}
 
-    try:
+{% block content %}
 
-        note = get_object_or_404(Notes, id=note_id)
+<div class="container">
 
-        quiz = Quiz.objects.create(
-            student=request.user.student,
-            subject=note.subject
-        )
+    <h2 class="dashboard-title">
+        Quiz Center
+    </h2>
 
-        reader = PdfReader(note.file.path)
+    <div class="row">
 
-        content = ""
+        <!-- Generate Quiz -->
 
-        for page in reader.pages:
-            text = page.extract_text()
+        <div class="col-md-6 mb-4">
 
-            if text:
-                content += text + " "
+            <div class="card-box">
 
-        sentences = regex.split(r'[.\n]', content)
+                <h4 class="text-primary mb-4">
+                    Generate Quiz
+                </h4>
 
-        sentences = [
-            s.strip() for s in sentences
-            if len(s.split()) > 6
-        ]
+                {% if notes %}
 
-        keywords = set()
+                    <div class="list-group">
 
-        for s in sentences:
-            for w in s.split():
+                        {% for note in notes %}
 
-                if len(w) > 4 and w.isalpha():
-                    keywords.add(w)
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
 
-        keywords = list(keywords)
+                                <div>
 
-        question_count = 0
+                                    <h6 class="mb-1">
+                                        {{ note.subject }}
+                                    </h6>
 
-        for sentence in sentences:
+                                    <small class="text-muted">
+                                        Uploaded Notes
+                                    </small>
 
-            words = sentence.split()
+                                </div>
 
-            candidates = [
-                w for w in words
-                if len(w) > 4 and w.isalpha()
-            ]
+                                <a href="/student/quiz/generate/{{ note.id }}/"
+                                class="btn btn-success btn-sm">
 
-            if not candidates:
-                continue
+                                    Generate
 
-            correct = random.choice(candidates)
+                                </a>
 
-            question_text = sentence.replace(correct, "_____")
+                            </div>
 
-            if len(keywords) < 4:
-                continue
+                        {% endfor %}
 
-            options = set(
-                random.sample(keywords, min(6, len(keywords)))
-            )
+                    </div>
 
-            options.add(correct)
+                {% else %}
 
-            if len(options) < 4:
-                continue
+                    <div class="alert alert-warning">
 
-            options = random.sample(list(options), 4)
+                        Upload notes first to generate quizzes.
 
-            Question.objects.create(
-                quiz=quiz,
-                question_text=question_text,
-                option_a=options[0],
-                option_b=options[1],
-                option_c=options[2],
-                option_d=options[3],
-                correct_answer=correct
-            )
+                    </div>
 
-            question_count += 1
+                {% endif %}
 
-            if question_count == 20:
-                break
+            </div>
 
-        return redirect("take_quiz", quiz_id=quiz.id)
+        </div>
 
-    except Exception as e:
+        <!-- Quiz History -->
 
-        print("Quiz Error:", e)
+        <div class="col-md-6 mb-4">
 
-        dj_messages.error(request, f"Quiz Error: {str(e)}")
+            <div class="card-box">
 
-        return redirect("quiz_home")
+                <h4 class="text-primary mb-4">
+                    Quiz History
+                </h4>
 
+                {% if quizzes %}
+
+                    <div class="table-responsive">
+
+                        <table class="table table-hover">
+
+                            <thead>
+
+                                <tr>
+
+                                    <th>Subject</th>
+                                    <th>Score</th>
+                                    <th>Date</th>
+
+                                </tr>
+
+                            </thead>
+
+                            <tbody>
+
+                                {% for quiz in quizzes %}
+
+                                <tr>
+
+                                    <td>
+                                        {{ quiz.subject }}
+                                    </td>
+
+                                    <td>
+
+                                        <span class="badge bg-success">
+
+                                            {{ quiz.score }}%
+
+                                        </span>
+
+                                    </td>
+
+                                    <td>
+                                        {{ quiz.date }}
+                                    </td>
+
+                                </tr>
+
+                                {% endfor %}
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                {% else %}
+
+                    <div class="alert alert-info">
+
+                        No quizzes attempted yet.
+
+                    </div>
+
+                {% endif %}
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}
 
 # ---------- TAKE QUIZ ----------
 @login_required
