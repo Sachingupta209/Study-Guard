@@ -323,74 +323,126 @@ def generate_quiz(request, note_id):
         id=note_id
     )
 
-    # Create quiz
-    quiz = Quiz.objects.create(
+    try:
 
-        student=request.user.student,
+        reader = PdfReader(note.file.path)
 
-        subject=note.subject
+        text = ""
 
-    )
+        for page in reader.pages:
 
-    # Create manual demo questions
-    Question.objects.create(
+            extracted = page.extract_text()
 
-        quiz=quiz,
+            if extracted:
+                text += extracted
 
-        question_text="What is Java?",
+        # Clean text
+        sentences = text.split(".")
 
-        option_a="Programming Language",
+        valid_sentences = []
 
-        option_b="Database",
+        for s in sentences:
 
-        option_c="Browser",
+            s = s.strip()
 
-        option_d="Hardware",
+            if len(s.split()) > 6:
+                valid_sentences.append(s)
 
-        correct_answer="Programming Language"
+        if len(valid_sentences) == 0:
 
-    )
+            dj_messages.error(
+                request,
+                "No readable text found in PDF."
+            )
 
-    Question.objects.create(
+            return redirect("quiz_home")
 
-        quiz=quiz,
+        # Create quiz
+        quiz = Quiz.objects.create(
 
-        question_text="Which keyword is used for inheritance?",
+            student=request.user.student,
 
-        option_a="this",
+            subject=note.subject
 
-        option_b="super",
+        )
 
-        option_c="extends",
+        count = 0
 
-        option_d="implements",
+        for sentence in valid_sentences[:5]:
 
-        correct_answer="extends"
+            words = sentence.split()
 
-    )
+            keywords = [
 
-    Question.objects.create(
+                w for w in words
 
-        quiz=quiz,
+                if len(w) > 4 and w.isalpha()
 
-        question_text="Python is a ?",
+            ]
 
-        option_a="Programming Language",
+            if len(keywords) < 4:
+                continue
 
-        option_b="Operating System",
+            answer = random.choice(keywords)
 
-        option_c="Browser",
+            question = sentence.replace(
+                answer,
+                "_____"
+            )
 
-        option_d="Compiler",
+            wrong = random.sample(
+                keywords,
+                3
+            )
 
-        correct_answer="Programming Language"
+            options = wrong + [answer]
 
-    )
+            random.shuffle(options)
 
-    return redirect(
-        "take_quiz",
-        quiz_id=quiz.id
-    )
+            Question.objects.create(
+
+                quiz=quiz,
+
+                question_text=question,
+
+                option_a=options[0],
+
+                option_b=options[1],
+
+                option_c=options[2],
+
+                option_d=options[3],
+
+                correct_answer=answer
+
+            )
+
+            count += 1
+
+        if count == 0:
+
+            quiz.delete()
+
+            dj_messages.error(
+                request,
+                "Could not generate quiz from PDF."
+            )
+
+            return redirect("quiz_home")
+
+        return redirect(
+            "take_quiz",
+            quiz_id=quiz.id
+        )
+
+    except Exception as e:
+
+        dj_messages.error(
+            request,
+            f"Error: {str(e)}"
+        )
+
+        return redirect("quiz_home")
 # ---------- TAKE QUIZ ----------
 @login_required
 def take_quiz(request, quiz_id):
