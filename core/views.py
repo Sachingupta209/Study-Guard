@@ -8,12 +8,14 @@ from .models import Student, Parent, Notes, Quiz, Question
 from .forms import NotesForm
 
 from PyPDF2 import PdfReader
+
 import random
 import re as regex
 
 
 # ---------- HOME ----------
 def home(request):
+
     return render(request, "home.html")
 
 
@@ -23,7 +25,6 @@ def student_signup(request):
     if request.method == "POST":
 
         try:
-            print(request.POST)
 
             name = request.POST.get("name")
             email = request.POST.get("email")
@@ -31,11 +32,13 @@ def student_signup(request):
             class_semester = request.POST.get("class_semester")
 
             if not name or not email or not password or not class_semester:
+
                 return render(request, "signup_student.html", {
                     "error": "All fields are required"
                 })
 
             if User.objects.filter(username=email).exists():
+
                 return render(request, "signup_student.html", {
                     "error": "Email already exists"
                 })
@@ -47,7 +50,7 @@ def student_signup(request):
                 password=password
             )
 
-            student = Student.objects.create(
+            Student.objects.create(
                 user=user,
                 class_semester=class_semester
             )
@@ -57,8 +60,6 @@ def student_signup(request):
             return redirect("student_dashboard")
 
         except Exception as e:
-
-            print("SIGNUP ERROR:", str(e))
 
             return render(request, "signup_student.html", {
                 "error": str(e)
@@ -73,25 +74,36 @@ def parent_signup(request):
     if request.method == "POST":
 
         try:
+
             name = request.POST.get("name")
             email = request.POST.get("email")
             password = request.POST.get("password")
             student_email = request.POST.get("student_email")
 
-            # Duplicate parent email
             if User.objects.filter(username=email).exists():
-                dj_messages.error(request, "Email already registered")
+
+                dj_messages.error(
+                    request,
+                    "Email already registered"
+                )
+
                 return redirect("parent_signup")
 
-            # Find student
             try:
-                student = Student.objects.get(user__email=student_email)
+
+                student = Student.objects.get(
+                    user__email=student_email
+                )
 
             except Student.DoesNotExist:
-                dj_messages.error(request, "Student email not found")
+
+                dj_messages.error(
+                    request,
+                    "Student email not found"
+                )
+
                 return redirect("parent_signup")
 
-            # Create parent user
             user = User.objects.create_user(
                 username=email,
                 email=email,
@@ -99,18 +111,25 @@ def parent_signup(request):
                 password=password
             )
 
-            # Create parent profile
             Parent.objects.create(
                 user=user,
                 student=student
             )
 
-            dj_messages.success(request, "Parent account created successfully")
+            dj_messages.success(
+                request,
+                "Parent account created successfully"
+            )
+
             return redirect("login")
 
         except Exception as e:
-            print("Parent Signup Error:", e)
-            dj_messages.error(request, f"Error: {str(e)}")
+
+            dj_messages.error(
+                request,
+                str(e)
+            )
+
             return redirect("parent_signup")
 
     return render(request, "signup_parent.html")
@@ -144,14 +163,20 @@ def user_login(request):
                 return redirect("home")
 
         else:
-            dj_messages.error(request, "Invalid email or password")
+
+            dj_messages.error(
+                request,
+                "Invalid email or password"
+            )
 
     return render(request, "login.html")
 
 
 # ---------- LOGOUT ----------
 def user_logout(request):
+
     logout(request)
+
     return redirect("home")
 
 
@@ -160,23 +185,38 @@ def user_logout(request):
 def student_dashboard(request):
 
     if not hasattr(request.user, "student"):
+
         return redirect("login")
 
     student = request.user.student
 
-    total_notes = Notes.objects.filter(student=student).count()
+    total_notes = Notes.objects.filter(
+        student=student
+    ).count()
 
-    quizzes = Quiz.objects.filter(student=student)
+    quizzes = Quiz.objects.filter(
+        student=student
+    )
 
     total_quizzes = quizzes.count()
 
-    scores = [q.score for q in quizzes if q.score is not None]
+    scores = [
+        q.score
+        for q in quizzes
+        if q.score is not None
+    ]
 
-    avg_score = round(sum(scores) / len(scores), 2) if scores else 0
+    avg_score = (
+        round(sum(scores) / len(scores), 2)
+        if scores else 0
+    )
 
     last_quiz = quizzes.order_by("-date").first()
 
-    last_score = last_quiz.score if last_quiz and last_quiz.score else 0
+    last_score = (
+        last_quiz.score
+        if last_quiz else 0
+    )
 
     return render(request, "student_dashboard.html", {
         "student": student,
@@ -192,25 +232,37 @@ def student_dashboard(request):
 def student_notes(request):
 
     if not hasattr(request.user, "student"):
+
         return redirect("login")
 
-    notes = Notes.objects.filter(student=request.user.student)
+    notes = Notes.objects.filter(
+        student=request.user.student
+    )
 
     if request.method == "POST":
 
-        form = NotesForm(request.POST, request.FILES)
+        form = NotesForm(
+            request.POST,
+            request.FILES
+        )
 
         if form.is_valid():
 
             note = form.save(commit=False)
+
             note.student = request.user.student
+
             note.save()
 
-            dj_messages.success(request, "Note uploaded successfully")
+            dj_messages.success(
+                request,
+                "Note uploaded successfully"
+            )
 
             return redirect("student_notes")
 
     else:
+
         form = NotesForm()
 
     return render(request, "student_notes.html", {
@@ -223,7 +275,10 @@ def student_notes(request):
 @login_required
 def delete_note(request, note_id):
 
-    note = get_object_or_404(Notes, id=note_id)
+    note = get_object_or_404(
+        Notes,
+        id=note_id
+    )
 
     if note.student == request.user.student:
 
@@ -232,7 +287,10 @@ def delete_note(request, note_id):
 
         note.delete()
 
-        dj_messages.success(request, "Note deleted successfully")
+        dj_messages.success(
+            request,
+            "Note deleted successfully"
+        )
 
     return redirect("student_notes")
 
@@ -243,9 +301,13 @@ def quiz_home(request):
 
     student = request.user.student
 
-    notes = Notes.objects.filter(student=student)
+    notes = Notes.objects.filter(
+        student=student
+    )
 
-    quizzes = Quiz.objects.filter(student=student).order_by("-date")
+    quizzes = Quiz.objects.filter(
+        student=student
+    ).order_by("-date")
 
     return render(request, "quiz_home.html", {
         "notes": notes,
@@ -259,9 +321,13 @@ def generate_quiz(request, note_id):
 
     try:
 
-        note = get_object_or_404(Notes, id=note_id)
+        note = get_object_or_404(
+            Notes,
+            id=note_id
+        )
 
         if note.student != request.user.student:
+
             return redirect("quiz_home")
 
         reader = PdfReader(note.file.path)
@@ -308,11 +374,8 @@ def generate_quiz(request, note_id):
             return redirect("quiz_home")
 
         quiz = Quiz.objects.create(
-
             student=request.user.student,
-
             subject=note.subject
-
         )
 
         keywords = set()
@@ -373,21 +436,13 @@ def generate_quiz(request, note_id):
                 )
 
                 Question.objects.create(
-
                     quiz=quiz,
-
                     question_text=question_text,
-
                     option_a=options[0],
-
                     option_b=options[1],
-
                     option_c=options[2],
-
                     option_d=options[3],
-
                     correct_answer=correct
-
                 )
 
                 question_count += 1
@@ -416,179 +471,26 @@ def generate_quiz(request, note_id):
 
     except Exception as e:
 
-        print("Quiz Error:", e)
-
         dj_messages.error(
             request,
-            f"Quiz Error: {str(e)}"
+            str(e)
         )
 
         return redirect("quiz_home")
 
-# ---------- QUIZ HOME ----------
-@login_required
-def quiz_home(request):
-
-    student = request.user.student
-
-    notes = Notes.objects.filter(student=student)
-
-    quizzes = Quiz.objects.filter(student=student).order_by("-date")
-
-    return render(request, "quiz_home.html", {
-        "notes": notes,
-        "quizzes": quizzes
-    })
-
-
-    <div class="row">
-
-        <!-- Generate Quiz -->
-
-        <div class="col-md-6 mb-4">
-
-            <div class="card-box">
-
-                <h4 class="text-primary mb-4">
-                    Generate Quiz
-                </h4>
-
-                {% if notes %}
-
-                    <div class="list-group">
-
-                        {% for note in notes %}
-
-                            <div class="list-group-item d-flex justify-content-between align-items-center">
-
-                                <div>
-
-                                    <h6 class="mb-1">
-                                        {{ note.subject }}
-                                    </h6>
-
-                                    <small class="text-muted">
-                                        Uploaded Notes
-                                    </small>
-
-                                </div>
-
-                                <a href="/student/quiz/generate/{{ note.id }}/"
-                                class="btn btn-success btn-sm">
-
-                                    Generate
-
-                                </a>
-
-                            </div>
-
-                        {% endfor %}
-
-                    </div>
-
-                {% else %}
-
-                    <div class="alert alert-warning">
-
-                        Upload notes first to generate quizzes.
-
-                    </div>
-
-                {% endif %}
-
-            </div>
-
-        </div>
-
-        <!-- Quiz History -->
-
-        <div class="col-md-6 mb-4">
-
-            <div class="card-box">
-
-                <h4 class="text-primary mb-4">
-                    Quiz History
-                </h4>
-
-                {% if quizzes %}
-
-                    <div class="table-responsive">
-
-                        <table class="table table-hover">
-
-                            <thead>
-
-                                <tr>
-
-                                    <th>Subject</th>
-                                    <th>Score</th>
-                                    <th>Date</th>
-
-                                </tr>
-
-                            </thead>
-
-                            <tbody>
-
-                                {% for quiz in quizzes %}
-
-                                <tr>
-
-                                    <td>
-                                        {{ quiz.subject }}
-                                    </td>
-
-                                    <td>
-
-                                        <span class="badge bg-success">
-
-                                            {{ quiz.score }}%
-
-                                        </span>
-
-                                    </td>
-
-                                    <td>
-                                        {{ quiz.date }}
-                                    </td>
-
-                                </tr>
-
-                                {% endfor %}
-
-                            </tbody>
-
-                        </table>
-
-                    </div>
-
-                {% else %}
-
-                    <div class="alert alert-info">
-
-                        No quizzes attempted yet.
-
-                    </div>
-
-                {% endif %}
-
-            </div>
-
-        </div>
-
-    </div>
-
-</div>
-
-{% endblock %}
 
 # ---------- TAKE QUIZ ----------
 @login_required
 def take_quiz(request, quiz_id):
 
-    quiz = get_object_or_404(Quiz, id=quiz_id)
+    quiz = get_object_or_404(
+        Quiz,
+        id=quiz_id
+    )
 
-    questions = Question.objects.filter(quiz=quiz)
+    questions = Question.objects.filter(
+        quiz=quiz
+    )
 
     return render(request, "take_quiz.html", {
         "quiz": quiz,
@@ -606,10 +508,14 @@ def submit_quiz(request, quiz_id):
         student=request.user.student
     )
 
-    questions = Question.objects.filter(quiz=quiz)
+    questions = Question.objects.filter(
+        quiz=quiz
+    )
 
     score = 0
+
     correct_count = 0
+
     wrong_count = 0
 
     total = questions.count()
@@ -620,24 +526,32 @@ def submit_quiz(request, quiz_id):
 
         if (
             user_answer
-            and q.correct_answer
             and user_answer.strip().lower()
             == q.correct_answer.strip().lower()
         ):
+
             score += 1
+
             correct_count += 1
 
         else:
+
             wrong_count += 1
 
-    quiz.score = round((score / total) * 100, 2) if total else 0
+    quiz.score = (
+        round((score / total) * 100, 2)
+        if total else 0
+    )
 
     quiz.save()
 
     history_scores = list(
-        Quiz.objects.filter(student=request.user.student)
-        .order_by("date")
+
+        Quiz.objects.filter(
+            student=request.user.student
+        ).order_by("date")
         .values_list("score", flat=True)
+
     )
 
     return render(request, "quiz_result.html", {
@@ -660,25 +574,28 @@ def student_progress(request):
 
     total_quizzes = quizzes.count()
 
-    scores = [q.score for q in quizzes if q.score is not None]
+    scores = [
+        q.score
+        for q in quizzes
+        if q.score is not None
+    ]
 
-    average_score = round(sum(scores) / len(scores), 2) if scores else 0
+    average_score = (
+        round(sum(scores) / len(scores), 2)
+        if scores else 0
+    )
 
     best_score = max(scores) if scores else 0
 
     worst_score = min(scores) if scores else 0
 
-    return render(
-        request,
-        "student_progress.html",
-        {
-            "total_quizzes": total_quizzes,
-            "average_score": average_score,
-            "best_score": best_score,
-            "worst_score": worst_score,
-            "scores": scores,
-        },
-    )
+    return render(request, "student_progress.html", {
+        "quizzes": quizzes,
+        "total_quizzes": total_quizzes,
+        "average_score": average_score,
+        "best_score": best_score,
+        "worst_score": worst_score,
+    })
 
 
 # ---------- PARENT DASHBOARD ----------
@@ -686,18 +603,18 @@ def student_progress(request):
 def parent_dashboard(request):
 
     if not hasattr(request.user, "parent"):
-        return redirect("login")
-
-    if not request.user.parent.student:
-        dj_messages.error(request, "No student linked")
 
         return redirect("login")
 
     student = request.user.parent.student
 
-    quizzes = Quiz.objects.filter(student=student).order_by("date")
+    quizzes = Quiz.objects.filter(
+        student=student
+    ).order_by("date")
 
-    scores = list(quizzes.values_list("score", flat=True))
+    scores = list(
+        quizzes.values_list("score", flat=True)
+    )
 
     total_quizzes = quizzes.count()
 
