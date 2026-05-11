@@ -1,3 +1,9 @@
+import json
+
+from google import genai
+
+from django.conf import settings
+
 from nltk.tokenize import sent_tokenize
 from nltk.corpus import stopwords
 
@@ -327,6 +333,45 @@ def generate_quiz(request, note_id):
         id=note_id
     )
 
+    text = ""
+
+    file_path = note.file.path
+
+    # ---------- TXT ----------
+    if file_path.endswith(".txt"):
+
+        with open(
+            file_path,
+            "r",
+            encoding="utf-8"
+        ) as file:
+
+            text = file.read()
+
+    # ---------- PDF ----------
+    elif file_path.endswith(".pdf"):
+
+        reader = PdfReader(file_path)
+
+        for page in reader.pages:
+
+            extracted = page.extract_text()
+
+            if extracted:
+                text += extracted
+
+    else:
+
+        dj_messages.error(
+            request,
+            "Only TXT and PDF supported."
+        )
+
+        return redirect("quiz_home")
+
+    text = text[:1500]
+
+    # ---------- CREATE QUIZ ----------
     quiz = Quiz.objects.create(
 
         student=request.user.student,
@@ -335,48 +380,181 @@ def generate_quiz(request, note_id):
 
     )
 
-    Question.objects.create(
+    # =====================================================
+    # TRY AI GENERATION
+    # =====================================================
 
-        quiz=quiz,
+    try:
 
-        question_text="What is Python?",
+        prompt = f"""
 
-        option_a="Programming Language",
+Generate 5 intelligent MCQ questions.
 
-        option_b="Database",
+Return ONLY valid JSON.
 
-        option_c="Browser",
+Format:
 
-        option_d="Hardware",
+[
+  {{
+    "question": "...",
+    "options": ["A","B","C","D"],
+    "answer": "correct"
+  }}
+]
 
-        correct_answer="Programming Language"
+Text:
 
-    )
+{text}
 
-    Question.objects.create(
+"""
 
-        quiz=quiz,
+        client = genai.Client(
+            api_key=settings.GEMINI_API_KEY
+        )
 
-        question_text="What is Django?",
+        response = client.models.generate_content(
 
-        option_a="Framework",
+            model="gemini-1.5-flash",
 
-        option_b="Game",
+            contents=prompt
 
-        option_c="Operating System",
+        )
 
-        option_d="Compiler",
+        ai_text = response.text.strip()
 
-        correct_answer="Framework"
+        ai_text = ai_text.replace(
+            "```json",
+            ""
+        )
 
-    )
+        ai_text = ai_text.replace(
+            "```",
+            ""
+        )
 
-    return redirect(
-        "take_quiz",
-        quiz_id=quiz.id
-    )
+        questions_data = json.loads(ai_text)
 
+        for item in questions_data:
 
+            options = item["options"]
+
+            Question.objects.create(
+
+                quiz=quiz,
+
+                question_text=item["question"],
+
+                option_a=options[0],
+
+                option_b=options[1],
+
+                option_c=options[2],
+
+                option_d=options[3],
+
+                correct_answer=item["answer"]
+
+            )
+
+        return redirect(
+            "take_quiz",
+            quiz_id=quiz.id
+        )
+
+    # =====================================================
+    # FALLBACK LOCAL QUIZ GENERATION
+    # =====================================================
+
+    except Exception as e:
+
+        print("AI FAILED:", str(e))
+
+        sentences = text.split(".")
+
+        count = 0
+
+        for sentence in sentences:
+
+            words = sentence.split()
+
+            keywords = [
+
+                w for w in words
+
+                if len(w) > 4 and w.isalpha()
+
+            ]
+
+            keywords = list(set(keywords))
+
+            if len(keywords) < 4:
+                continue
+
+            answer = random.choice(keywords)
+
+            question = sentence.replace(
+                answer,
+                "_____"
+            )
+
+            wrong = [
+
+                w for w in keywords
+
+                if w != answer
+
+            ]
+
+            if len(wrong) < 3:
+                continue
+
+            options = random.sample(
+                wrong,
+                3
+            )
+
+            options.append(answer)
+
+            random.shuffle(options)
+
+            Question.objects.create(
+
+                quiz=quiz,
+
+                question_text=question,
+
+                option_a=options[0],
+
+                option_b=options[1],
+
+                option_c=options[2],
+
+                option_d=options[3],
+
+                correct_answer=answer
+
+            )
+
+            count += 1
+
+            if count >= 5:
+                break
+
+        if count == 0:
+
+            quiz.delete()
+
+            dj_messages.error(
+                request,
+                "Could not generate quiz."
+            )
+
+            return redirect("quiz_home")
+
+        return redirect(
+            "take_quiz",
+            quiz_id=quiz.id
+        )
 # ---------- TAKE QUIZ ----------
 @login_required
 def take_quiz(request, quiz_id):
