@@ -413,47 +413,6 @@ def generate_quiz(request, note_id):
 
     try:
 
-        file_path = note.file.path
-
-        text = ""
-
-        # TXT
-        if file_path.endswith(".txt"):
-
-            with open(
-                file_path,
-                "r",
-                encoding="utf-8"
-            ) as file:
-
-                text = file.read()
-
-        # PDF
-        elif file_path.endswith(".pdf"):
-
-            reader = PdfReader(file_path)
-
-            for page in reader.pages:
-
-                extracted = page.extract_text()
-
-                if extracted:
-                    text += extracted
-
-        else:
-
-            dj_messages.error(
-                request,
-                "Only PDF and TXT supported."
-            )
-
-            return redirect("quiz_home")
-
-        # NLP sentence split
-        sentences = sent_tokenize(text)
-
-        stop_words = set(stopwords.words("english"))
-
         quiz = Quiz.objects.create(
 
             student=request.user.student,
@@ -462,88 +421,41 @@ def generate_quiz(request, note_id):
 
         )
 
-        question_count = 0
+        Question.objects.create(
 
-        for sentence in sentences[:10]:
+            quiz=quiz,
 
-            words = sentence.split()
+            question_text="What is Python?",
 
-            keywords = []
+            option_a="Programming Language",
 
-            for word in words:
+            option_b="Database",
 
-                clean = word.lower().strip(".,!?()")
+            option_c="Browser",
 
-                if (
-                    clean.isalpha()
-                    and len(clean) > 4
-                    and clean not in stop_words
-                ):
+            option_d="Hardware",
 
-                    keywords.append(clean)
+            correct_answer="Programming Language"
 
-            keywords = list(set(keywords))
+        )
 
-            if len(keywords) < 4:
-                continue
+        Question.objects.create(
 
-            answer = random.choice(keywords)
+            quiz=quiz,
 
-            question_text = sentence.replace(
-                answer,
-                "_____"
-            )
+            question_text="What is Django?",
 
-            wrong_answers = [
+            option_a="Framework",
 
-                w for w in keywords
+            option_b="Game",
 
-                if w != answer
+            option_c="Operating System",
 
-            ]
+            option_d="Compiler",
 
-            if len(wrong_answers) < 3:
-                continue
+            correct_answer="Framework"
 
-            wrong_options = random.sample(
-                wrong_answers,
-                3
-            )
-
-            options = wrong_options + [answer]
-
-            random.shuffle(options)
-
-            Question.objects.create(
-
-                quiz=quiz,
-
-                question_text=question_text,
-
-                option_a=options[0],
-
-                option_b=options[1],
-
-                option_c=options[2],
-
-                option_d=options[3],
-
-                correct_answer=answer
-
-            )
-
-            question_count += 1
-
-        if question_count == 0:
-
-            quiz.delete()
-
-            dj_messages.error(
-                request,
-                "Could not generate quiz."
-            )
-
-            return redirect("quiz_home")
+        )
 
         return redirect(
             "take_quiz",
