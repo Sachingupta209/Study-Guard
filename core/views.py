@@ -1,6 +1,6 @@
 from nltk.tokenize import sent_tokenize
 from nltk.corpus import stopwords
-from nltk.corpus import stopwords
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
@@ -318,6 +318,7 @@ def quiz_home(request):
     })
 
 
+# ---------- GENERATE QUIZ ----------
 @login_required
 def generate_quiz(request, note_id):
 
@@ -326,150 +327,56 @@ def generate_quiz(request, note_id):
         id=note_id
     )
 
-    try:
+    quiz = Quiz.objects.create(
 
-        file_path = note.file.path
+        student=request.user.student,
 
-        text = ""
+        subject=note.subject
 
-        # ---------- TXT SUPPORT ----------
-
-        if file_path.endswith(".txt"):
-
-            with open(
-                file_path,
-                "r",
-                encoding="utf-8"
-            ) as f:
-
-                text = f.read()
-
-        # ---------- PDF SUPPORT ----------
-
-        elif file_path.endswith(".pdf"):
-
-            reader = PdfReader(file_path)
-
-            for page in reader.pages:
-
-                extracted = page.extract_text()
-
-                if extracted:
-                    text += extracted
-
-        else:
-
-            dj_messages.error(
-                request,
-                "Only PDF and TXT files supported."
-            )
-
-            return redirect("quiz_home")
-
-        # ---------- CLEAN TEXT ----------
-
-        text = text.replace("\n", " ")
-
-        sentences = text.split(".")
-
-        valid_sentences = []
-
-        for s in sentences:
-
-            s = s.strip()
-
-            if len(s.split()) >= 5:
-
-                valid_sentences.append(s)
-
-        if len(valid_sentences) == 0:
-
-            dj_messages.error(
-                request,
-                "No readable content found."
-            )
-
-            return redirect("quiz_home")
-
-        # ---------- CREATE QUIZ ----------
-
-        quiz = Quiz.objects.create(
-
-            student=request.user.student,
-
-            subject=note.subject
-
-        )
-
-        question_count = 0
-
-@login_required
-def generate_quiz(request, note_id):
-
-    note = get_object_or_404(
-        Notes,
-        id=note_id
     )
 
-    try:
+    Question.objects.create(
 
-        quiz = Quiz.objects.create(
+        quiz=quiz,
 
-            student=request.user.student,
+        question_text="What is Python?",
 
-            subject=note.subject
+        option_a="Programming Language",
 
-        )
+        option_b="Database",
 
-        Question.objects.create(
+        option_c="Browser",
 
-            quiz=quiz,
+        option_d="Hardware",
 
-            question_text="What is Python?",
+        correct_answer="Programming Language"
 
-            option_a="Programming Language",
+    )
 
-            option_b="Database",
+    Question.objects.create(
 
-            option_c="Browser",
+        quiz=quiz,
 
-            option_d="Hardware",
+        question_text="What is Django?",
 
-            correct_answer="Programming Language"
+        option_a="Framework",
 
-        )
+        option_b="Game",
 
-        Question.objects.create(
+        option_c="Operating System",
 
-            quiz=quiz,
+        option_d="Compiler",
 
-            question_text="What is Django?",
+        correct_answer="Framework"
 
-            option_a="Framework",
+    )
 
-            option_b="Game",
+    return redirect(
+        "take_quiz",
+        quiz_id=quiz.id
+    )
 
-            option_c="Operating System",
 
-            option_d="Compiler",
-
-            correct_answer="Framework"
-
-        )
-
-        return redirect(
-            "take_quiz",
-            quiz_id=quiz.id
-        )
-
-    except Exception as e:
-
-        dj_messages.error(
-            request,
-            f"Error: {str(e)}"
-        )
-
-        return redirect("quiz_home")
 # ---------- TAKE QUIZ ----------
 @login_required
 def take_quiz(request, quiz_id):
