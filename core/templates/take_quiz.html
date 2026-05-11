@@ -21,8 +21,8 @@
 
         </div>
 
-        <form method="POST"
-        action="/submit-quiz/{{ quiz.id }}/">
+        
+        <form method="POST" action="/student/quiz/submit/{{ quiz.id }}/">>
 
             {% csrf_token %}
 
