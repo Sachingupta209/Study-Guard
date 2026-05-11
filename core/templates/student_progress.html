@@ -186,19 +186,25 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+{{ quizzes|json_script:"quiz-data" }}
+
 <script>
 
-const labels = [
-    {% for quiz in quizzes %}
-        "Quiz {{ forloop.counter }}",
-    {% endfor %}
-];
+const quizData = JSON.parse(
+    document.getElementById('quiz-data').textContent
+);
 
-const scores = [
-    {% for quiz in quizzes %}
-        {{ quiz.score }},
-    {% endfor %}
-];
+const labels = [];
+const scores = [];
+
+for (let i = 0; i < quizData.length; i++) {
+
+    labels.push("Quiz " + (i + 1));
+    scores.push(quizData[i].score);
+
+}
 
 const ctx = document.getElementById('scoreChart');
 
